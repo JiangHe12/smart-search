@@ -1,0 +1,19 @@
+{
+  "name": "smart-search",
+  "owner": {
+    "name": "JiangHe12"
+  },
+  "metadata": {
+    "description": "Claude Code plugin: search MCPs with enforced strategy workflow",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "smart-search",
+      "source": "./",
+      "description": "Bundles brave-search and tavily-search MCPs with a mandatory search strategy. Solves WebSearch unavailability on third-party model providers.",
+      "category": "search",
+      "tags": ["search", "mcp", "brave", "tavily", "strategy"]
+    }
+  ]
+}
