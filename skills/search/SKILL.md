@@ -10,6 +10,18 @@ license: MIT
 
 Before calling any search tool, decide the search depth first. Use the smallest search flow that can answer safely.
 
+## Mandatory Search Discipline
+
+Before every search tool call:
+
+1. Classify the task as Simple, Standard, or Complex.
+2. Choose the tool path from the Search Flow table.
+3. Apply required rules for real-time values, freshness/versioning, language/region, and Tavily escalation.
+
+Do not search first and classify afterward.
+Do not answer from Brave snippets when this strategy requires Tavily.
+If you skip a required step because a tool is unavailable or fails, state that limitation in the answer.
+
 ## 1. Search Flow
 
 | Level | Use For | Default Flow |
@@ -109,6 +121,7 @@ Default to `search_depth: "basic"`. Escalate only when basic results are too sha
 
 ## 9. Before Responding
 
+- Did you actually follow the selected Search Flow, or are you answering from a shortcut?
 - Did the search depth match the task risk?
 - For real-time value queries, did you include a date, timestamp, or freshness indicator?
 - For latest/current queries, did the search query include the current year?

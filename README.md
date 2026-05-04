@@ -31,11 +31,13 @@ There is no manual activation command to run.
 
 The bundled skill keeps search depth proportional to the task:
 
+Before every search tool call, the strategy requires the agent to classify the task, choose the matching tool path, and apply the relevant real-time, freshness/versioning, language/region, and Tavily escalation rules.
+
 | Level | Use For | Default Flow |
 |---|---|---|
 | Simple | One fact, real-time value, official URL lookup | Tavily directly for real-time values; Brave directly for source lookup |
 | Standard | Official docs, versions, API usage, changelog | Brave first; Tavily only if page content is needed |
-| Complex | Comparison, synthesis, conflicting claims | Brave for source discovery; Tavily for key source details |
+| Complex | Comparison, synthesis, conflicting claims | Brave for source discovery; Tavily required for key sources before conclusions |
 
 Tavily is a conditional depth upgrade, not a mandatory second step. Use it when the answer depends on page content, exact wording, conflicting claims, tables, code blocks, or source details that Brave snippets do not contain.
 
@@ -116,7 +118,7 @@ This enforces one strategy review per session without requiring a separate activ
 |---|---|
 | `brave-search` MCP | Web search, official URL discovery, authoritative source discovery |
 | `tavily-search` MCP | Page content extraction, exact details, deeper multi-source analysis |
-| `search` skill | Search depth, source quality, version/date disambiguation, Tavily escalation, language defaults, URL presentation |
+| `search` skill | Mandatory search discipline, search depth, source quality, version/date disambiguation, Tavily escalation, language defaults, URL presentation |
 | `PreToolUse` hook | One-time strategy gate and session marker handling |
 
 ---
