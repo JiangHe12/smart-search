@@ -47,18 +47,7 @@ Only after the strategy is completed will the search tool be allowed to execute.
 
 ### Step 3: Set API keys
 
-On first install, Claude Code will prompt you for your API keys via `userConfig`. If you need to change them later:
-
-```
-/config
-```
-
-Or set via CLI:
-
-```bash
-claude config set userConfig.brave_api_key your-brave-api-key
-claude config set userConfig.tavily_api_key your-tavily-api-key
-```
+On first install, Claude Code will prompt you for your API keys via `userConfig`. If you need to change them later, use `/config` in Claude Code.
 
 ### Step 4: Reload
 
@@ -86,7 +75,7 @@ claude config set userConfig.tavily_api_key your-tavily-api-key
 
 ### Hook Mechanism
 
-The plugin uses a `command`-type `PreToolUse` hook that intercepts all brave-search and tavily-search tool calls. When a search tool is invoked:
+The plugin uses a `command`-type `PreToolUse` hook (Node.js script) that intercepts all brave-search and tavily-search tool calls. When a search tool is invoked:
 
 1. The hook script checks if the search strategy has been completed in this session
 2. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
@@ -143,9 +132,9 @@ npm config set https-proxy http://your-proxy:port
 
 **Symptom:** Every search call is denied, even after invoking the skill.
 
-**Fix:** The session marker resets when Claude Code restarts. If the issue persists, manually clear the marker:
+**Fix:** The marker is stored in Claude Code's plugin data directory. To reset:
 ```bash
-rm /tmp/.smart-search-strategy-applied
+rm -rf "${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/smart-search}/markers"
 ```
 
 ### MCP tool names changed
@@ -187,8 +176,8 @@ smart-search/
 │       └── SKILL.md             # Search strategy skill
 ├── hooks/
 │   ├── hooks.json               # PreToolUse command hook config
-│   ├── enforce-search-strategy.sh   # Hook script (deny/allow logic)
-│   └── mark-strategy-applied.sh     # Marker script (called by skill)
+│   ├── enforce-search-strategy.mjs  # Hook script (deny/allow logic)
+│   └── mark-strategy-applied.mjs    # Marker script (called by skill)
 ├── .mcp.json                    # MCP server configs
 └── README.md
 ```
