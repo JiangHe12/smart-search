@@ -101,7 +101,7 @@ The skill follows a 6-step workflow:
 3. **Tool Selection** — pick brave-search, tavily-search, or both
 4. **Execution Flow** — follow the matching flow for your task level
 5. **Failure Handling** — switch tools or refine queries on failure
-6. **Deep Content Config** — use `search_depth: advanced` when needed
+6. **Tavily Payload Control** — start with basic depth; use advanced/raw content only when needed
 
 ---
 

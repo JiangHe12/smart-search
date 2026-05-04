@@ -48,7 +48,7 @@ Answer these before calling any tool:
 | Task Need | Tool | Notes |
 |-----------|------|-------|
 | Find official docs, GitHub repos, authoritative URLs | `brave-search` | Required first step for Standard/Complex tasks |
-| Extract page content, structured data, concrete values | `tavily-search` | Use `search_depth: advanced` for detailed content |
+| Extract page content, structured data, concrete values | `tavily-search` | Start with `search_depth: basic`; escalate only if needed |
 | Summarize, compare, or synthesize multiple sources | `tavily-search` | **Required — brave-search summaries are not sufficient** |
 | Need both source URL and its content | `brave-search` first → `tavily-search` | Both required |
 | Simple real-time data (weather, price, single fact) | `tavily-search` directly | Skip brave-search for Simple tasks |
@@ -71,7 +71,7 @@ If a required Brave or Tavily search tool is not callable, use ToolSearch to loa
 
 ```text
 1. brave-search: "[topic] official docs/release 2026" → get authoritative URL
-2. tavily-search: extract content from that URL (search_depth: advanced)
+2. tavily-search: extract content from that URL (start with search_depth: basic)
 3. Respond
 ```
 
@@ -96,7 +96,7 @@ Tools fail. Here is how to adapt:
 |-----------|--------|
 | `brave-search` returns no relevant results | Switch directly to `tavily-search` with a refined query — do not repeat the same brave-search query |
 | `brave-search` fails (error / timeout) | Skip to `tavily-search` immediately — do not retry brave-search more than once |
-| `tavily-search` returns shallow content | Retry with `search_depth: advanced` and `include_raw_content: true` |
+| `tavily-search` returns shallow content | Retry with `search_depth: advanced`; add `include_raw_content: true` only if exact page text is required |
 | Both tools return irrelevant results | Reformulate query (add year, domain, or more specific terms), then retry once per tool |
 | After 2 failed attempts per tool | Inform the user of what was found and what remains uncertain — do not fabricate |
 
@@ -104,16 +104,25 @@ Tools fail. Here is how to adapt:
 
 ---
 
-## Step 6: tavily-search Configuration for Deep Content
+## Step 6: tavily-search Payload Control
 
-When detailed content is needed (Standard or Complex tasks):
+Default for Standard documentation, changelog, release-note, and feature-summary tasks:
 
 ```json
 {
-  "search_depth": "advanced",
-  "include_raw_content": true
+  "search_depth": "basic"
 }
 ```
+
+Use advanced depth only when basic results are too shallow:
+
+```json
+{
+  "search_depth": "advanced"
+}
+```
+
+Use `include_raw_content: true` only when exact source text, code blocks, tables, or full page structure are required. Avoid raw content for general documentation lookup and feature summaries because it can return very large payloads.
 
 ---
 
