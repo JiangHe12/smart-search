@@ -86,8 +86,8 @@ The plugin uses a `command`-type `PreToolUse` hook (Node.js script) that interce
 1. A `SessionStart` hook clears the strategy marker on new sessions and `/clear`
 2. The `PreToolUse` hook script checks if `/smart-search:search` has been invoked in this active context
 3. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
-4. Claude is told to invoke `/smart-search:search`, complete the checklist, and run the marker command shown at the end of the skill
-5. After completing the strategy, the skill marks it as applied
+4. Claude is told to invoke `/smart-search:search`, complete the checklist, and run the final activation command shown at the end of the skill
+5. After completing the strategy, the activation command enables search for the session
 6. The next search tool call is explicitly allowed through with `permissionDecision: "allow"`
 
 This is a hard constraint, not a soft prompt — search tools cannot execute in a new session until `/smart-search:search` has been invoked once. Resuming a session or compacting context preserves the marker to avoid repeated interruptions.
@@ -139,7 +139,7 @@ npm config set https-proxy http://your-proxy:port
 
 **Symptom:** Every search call is denied, even after invoking the skill.
 
-**Fix:** Make sure the marker command at the end of `/smart-search:search` was run. Reading the skill content alone is not enough; the marker file must exist. The marker is stored in your home directory. To reset:
+**Fix:** Make sure the final activation command at the end of `/smart-search:search` was run. Reading the skill content alone is not enough; Smart Search must be enabled for the session. The activation marker is stored in your home directory. To reset:
 ```bash
 rm -rf "$HOME/.claude-smart-search"
 ```

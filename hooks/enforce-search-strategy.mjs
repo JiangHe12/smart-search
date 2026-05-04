@@ -36,7 +36,7 @@ const output = JSON.stringify({
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     permissionDecision: "deny",
-    permissionDecisionReason: `Smart Search marker was not found. Before using any search tool${toolSuffix}, invoke /smart-search:search, complete its checklist, run the exact marker command shown at the end of the skill, then retry the search.`,
+    permissionDecisionReason: `Smart Search session activation is missing. Before using any search tool${toolSuffix}, invoke /smart-search:search, complete its checklist, run the final activation command shown at the end of the skill, then retry the search.`,
   },
 });
 

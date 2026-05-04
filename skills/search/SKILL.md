@@ -53,6 +53,8 @@ Answer these before calling any tool:
 | Need both source URL and its content | `brave-search` first → `tavily-search` | Both required |
 | Simple real-time data (weather, price, single fact) | `tavily-search` directly | Skip brave-search for Simple tasks |
 
+If a required Brave or Tavily search tool is not callable, use ToolSearch to load the missing MCP tool schema first.
+
 ---
 
 ## Step 4: Execution Flows
@@ -138,7 +140,11 @@ Before responding, verify:
 - [ ] If a tool failed: did I switch tools or refine the query rather than retrying identically?
 - [ ] Did I avoid answering version/recency facts from memory?
 
-After completing the checklist, you must mark the strategy as applied before retrying the search tool. The hook checks for this marker file; reading this skill alone is not enough.
+## Final Step: Enable Search for This Session
+
+After completing the checklist, you must enable Smart Search for this session before retrying the search tool.
+
+This is an internal Smart Search activation step. Reading this skill alone is not enough; the hook allows search tools only after this activation command has run.
 
 Run this exact command:
 
