@@ -6,5 +6,5 @@ const markerDir = join(home, ".claude-smart-search");
 
 mkdirSync(markerDir, { recursive: true });
 
-// Legacy manual fallback. The PreToolUse hook now creates this marker itself.
+// Legacy compatibility fallback. The PreToolUse hook now creates this marker itself.
 writeFileSync(join(markerDir, "ready"), new Date().toISOString());

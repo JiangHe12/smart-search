@@ -1,7 +1,7 @@
 {
   "name": "smart-search",
-  "description": "Search with non-blocking first-use reminders. Bundles brave-search and tavily-search MCPs with conditional depth guidance.",
-  "version": "1.2.1",
+  "description": "Search with one-time strategy enforcement. Bundles brave-search and tavily-search MCPs with conditional depth guidance.",
+  "version": "1.3.0",
   "author": {
     "name": "JiangHe12"
   },

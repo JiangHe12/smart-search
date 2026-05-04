@@ -4,6 +4,8 @@ description: Search tool selection strategy for brave-search and tavily-search. 
 license: MIT
 ---
 
+<!-- SMART_SEARCH_STRATEGY_LOADED_V1 -->
+
 # Search Strategy
 
 Before calling any search tool, decide the search depth first. Use the smallest search flow that can answer safely.

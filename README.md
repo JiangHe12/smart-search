@@ -1,6 +1,6 @@
 # Smart Search
 
-A Claude Code plugin that bundles Brave Search and Tavily MCP servers, then shows a first-use strategy reminder for search tool calls.
+A Claude Code plugin that bundles Brave Search and Tavily MCP servers, then enforces one strategy review before the first search tool call in a session.
 
 ---
 
@@ -18,10 +18,10 @@ The plugin activates only when a Brave or Tavily search tool is called. Normal c
 
 On the first search tool call in a session:
 
-1. The `PreToolUse` hook allows the search call.
-2. The hook shows a reminder to apply the `/smart-search:search` strategy.
-3. The hook automatically records a session marker.
-4. Later search tool calls in the same session continue normally without repeated reminders.
+1. The `PreToolUse` hook blocks the search call.
+2. The hook asks the agent to invoke `/smart-search:search`.
+3. After the skill is loaded, the hook detects the skill marker in the session transcript.
+4. The hook automatically records a session marker and allows later search calls in the same session.
 
 There is no manual activation command to run.
 
@@ -100,10 +100,11 @@ The plugin uses command hooks:
 1. `SessionStart` clears the session marker on startup and `/clear`.
 2. `PreToolUse` intercepts Brave and Tavily search tool calls.
 3. If the marker exists, the search call is allowed silently.
-4. If the marker is missing, the search call is allowed with a strategy reminder, and the hook writes the marker automatically.
-5. Later search calls in the same session are allowed silently.
+4. If the marker is missing, the hook checks whether `/smart-search:search` has been loaded into the session transcript.
+5. If the skill marker is found, the hook writes the session marker and allows the search call.
+6. If the skill marker is missing, the search call is denied with instructions to invoke `/smart-search:search`.
 
-This preserves the first-search reminder without blocking search or requiring a separate activation command.
+This enforces one strategy review per session without requiring a separate activation command.
 
 ### Tool Roles
 
@@ -112,7 +113,7 @@ This preserves the first-search reminder without blocking search or requiring a 
 | `brave-search` MCP | Web search, official URL discovery, authoritative source discovery |
 | `tavily-search` MCP | Page content extraction, exact details, deeper multi-source analysis |
 | `search` skill | Search depth, source quality, Tavily escalation, language defaults, URL presentation |
-| `PreToolUse` hook | Non-blocking first-search strategy reminder and session marker handling |
+| `PreToolUse` hook | One-time strategy gate and session marker handling |
 
 ---
 
@@ -137,7 +138,7 @@ npm config set https-proxy http://your-proxy:port
 
 ### Hook not triggering
 
-**Symptom:** Search executes without the first-search strategy reminder.
+**Symptom:** Search executes without the first-search strategy gate.
 
 **Fix:** Run `/hooks` and confirm the `PreToolUse` command hook is listed. If not, run `/reload-plugins`.
 
@@ -147,11 +148,11 @@ npm config set https-proxy http://your-proxy:port
 
 **Fix:** Run `/plugin list` to confirm the plugin is enabled. If needed, reinstall or reload plugins.
 
-### Search reminders repeat every time
+### Search is repeatedly blocked
 
-**Symptom:** Every search call shows the first-use reminder instead of only the first one.
+**Symptom:** Every search call is denied even after invoking `/smart-search:search`.
 
-**Fix:** The hook may be unable to write the session marker in your home directory. Check the hook output for the marker path and permission error. The marker is stored at:
+**Fix:** The hook may be unable to detect the skill marker in the session transcript or write the session marker in your home directory. Check the hook output for the marker path and permission error. The marker is stored at:
 
 ```text
 ~/.claude-smart-search/ready
@@ -199,7 +200,7 @@ smart-search/
 └── README.md
 ```
 
-`mark-strategy-applied.mjs` is kept as a legacy manual fallback. The normal flow now writes the marker from `enforce-search-strategy.mjs`.
+`mark-strategy-applied.mjs` is kept as a legacy compatibility fallback. The normal flow now writes the marker from `enforce-search-strategy.mjs`.
 
 ---
 
