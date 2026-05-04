@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from "fs";
 import { join } from "path";
 
-const home = process.env.HOME || process.env.USERPROFILE || "/tmp";
+const home = process.env.USERPROFILE || process.env.HOME || "/tmp";
 const markerDir = join(home, ".claude-smart-search");
 const markerFile = join(markerDir, "ready");
 
@@ -36,7 +36,7 @@ const output = JSON.stringify({
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     permissionDecision: "deny",
-    permissionDecisionReason: `Before using any search tool${toolSuffix}, invoke /smart-search:search, complete its checklist, run the marker command shown at the end of the skill, then retry the search.`,
+    permissionDecisionReason: `Smart Search marker was not found. Before using any search tool${toolSuffix}, invoke /smart-search:search, complete its checklist, run the exact marker command shown at the end of the skill, then retry the search.`,
   },
 });
 

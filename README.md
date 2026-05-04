@@ -139,7 +139,7 @@ npm config set https-proxy http://your-proxy:port
 
 **Symptom:** Every search call is denied, even after invoking the skill.
 
-**Fix:** Make sure the marker command at the end of `/smart-search:search` was run. The marker is stored in your home directory. To reset:
+**Fix:** Make sure the marker command at the end of `/smart-search:search` was run. Reading the skill content alone is not enough; the marker file must exist. The marker is stored in your home directory. To reset:
 ```bash
 rm -rf "$HOME/.claude-smart-search"
 ```
