@@ -33,11 +33,15 @@ The bundled skill keeps search depth proportional to the task:
 
 | Level | Use For | Default Flow |
 |---|---|---|
-| Simple | One fact, real-time data, official URL lookup | One targeted search call |
+| Simple | One fact, real-time value, official URL lookup | Tavily directly for real-time values; Brave directly for source lookup |
 | Standard | Official docs, versions, API usage, changelog | Brave first; Tavily only if page content is needed |
 | Complex | Comparison, synthesis, conflicting claims | Brave for source discovery; Tavily for key source details |
 
 Tavily is a conditional depth upgrade, not a mandatory second step. Use it when the answer depends on page content, exact wording, conflicting claims, tables, code blocks, or source details that Brave snippets do not contain.
+
+For real-time values such as weather, prices, live scores, status, inventory, or current pricing, the strategy uses Tavily directly because search snippets are often stale or incomplete.
+
+For latest/current or versioned facts, the strategy requires year-aware queries plus date or version evidence. When results mention multiple versions of the same product, model, API, SDK, or document, official release dates decide priority first; if dates are missing, documentation depth is used as a fallback and remaining ambiguity is disclosed.
 
 For Chinese queries, the skill defaults to `country: "CN"` and `search_lang: "zh-hans"` when the target is China-local, Chinese-language, or not otherwise specified. For foreign official docs, global news, overseas companies, or explicit language/region targets, follow the target source instead.
 
@@ -112,7 +116,7 @@ This enforces one strategy review per session without requiring a separate activ
 |---|---|
 | `brave-search` MCP | Web search, official URL discovery, authoritative source discovery |
 | `tavily-search` MCP | Page content extraction, exact details, deeper multi-source analysis |
-| `search` skill | Search depth, source quality, Tavily escalation, language defaults, URL presentation |
+| `search` skill | Search depth, source quality, version/date disambiguation, Tavily escalation, language defaults, URL presentation |
 | `PreToolUse` hook | One-time strategy gate and session marker handling |
 
 ---
