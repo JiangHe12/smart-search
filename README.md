@@ -83,13 +83,14 @@ This plugin uses Claude Code `userConfig` for API keys. Existing shell environme
 
 The plugin uses a `command`-type `PreToolUse` hook (Node.js script) that intercepts all brave-search and tavily-search tool calls. When a search tool is invoked:
 
-1. The hook script checks if `/smart-search:search` has been invoked in this session
-2. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
-3. Claude is told to invoke `/smart-search:search` first
-4. After completing the strategy, the skill marks it as applied
-5. The next search tool call is explicitly allowed through with `permissionDecision: "allow"`
+1. A `SessionStart` hook clears the strategy marker on new sessions and `/clear`
+2. The `PreToolUse` hook script checks if `/smart-search:search` has been invoked in this active context
+3. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
+4. Claude is told to invoke `/smart-search:search` first
+5. After completing the strategy, the skill marks it as applied
+6. The next search tool call is explicitly allowed through with `permissionDecision: "allow"`
 
-This is a hard constraint, not a soft prompt — search tools cannot execute in a session until `/smart-search:search` has been invoked once.
+This is a hard constraint, not a soft prompt — search tools cannot execute in a new session until `/smart-search:search` has been invoked once. Resuming a session or compacting context preserves the marker to avoid repeated interruptions.
 
 ### Search Strategy
 
@@ -187,6 +188,7 @@ smart-search/
 ├── hooks/
 │   ├── hooks.json               # PreToolUse command hook config
 │   ├── enforce-search-strategy.mjs  # Hook script (deny/allow logic)
+│   ├── reset-strategy-marker.mjs    # SessionStart marker reset
 │   └── mark-strategy-applied.mjs    # Marker script (called by skill)
 ├── .mcp.json                    # MCP server configs
 └── README.md
