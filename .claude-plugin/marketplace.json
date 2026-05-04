@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Claude Code plugin: search MCPs with enforced strategy workflow",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   "plugins": [
     {
