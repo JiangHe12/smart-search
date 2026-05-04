@@ -1,13 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, appendFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 const home = process.env.HOME || process.env.USERPROFILE || "/tmp";
 const markerDir = join(home, ".claude-smart-search");
 const markerFile = join(markerDir, "ready");
-
-// Debug log
-const debugLine = `[${new Date().toISOString()}] home=${home} markerFile=${markerFile} exists=${existsSync(markerFile)}\n`;
-try { appendFileSync(join(markerDir, "debug.log"), debugLine); } catch {}
 
 function readHookInput() {
   try {
@@ -21,6 +17,14 @@ function readHookInput() {
 const input = readHookInput();
 
 if (existsSync(markerFile)) {
+  const output = JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "allow",
+      permissionDecisionReason: "Smart Search strategy has already been applied for this session.",
+    },
+  });
+  process.stdout.write(output);
   process.exit(0);
 }
 

@@ -141,13 +141,7 @@ Before responding, verify:
 After completing the checklist, mark the strategy as applied so the search tool can proceed:
 
 ```bash
-node "<plugin-root>/hooks/mark-strategy-applied.mjs"
-```
-
-Replace `<plugin-root>` with the actual plugin path. Or create the marker directly:
-
-```bash
-mkdir -p ~/.claude-smart-search && touch ~/.claude-smart-search/ready
+node -e "const fs=require('fs'), path=require('path'); const home=process.env.HOME||process.env.USERPROFILE||'/tmp'; const dir=path.join(home,'.claude-smart-search'); fs.mkdirSync(dir,{recursive:true}); fs.writeFileSync(path.join(dir,'ready'), new Date().toISOString());"
 ```
 
 ---

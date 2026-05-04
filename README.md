@@ -87,7 +87,7 @@ The plugin uses a `command`-type `PreToolUse` hook (Node.js script) that interce
 2. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
 3. Claude is told to invoke `/smart-search:search` first
 4. After completing the strategy, the skill marks it as applied
-5. The next search tool call is allowed through
+5. The next search tool call is explicitly allowed through with `permissionDecision: "allow"`
 
 This is a hard constraint, not a soft prompt — search tools cannot execute in a session until `/smart-search:search` has been invoked once.
 
@@ -138,9 +138,9 @@ npm config set https-proxy http://your-proxy:port
 
 **Symptom:** Every search call is denied, even after invoking the skill.
 
-**Fix:** The marker is stored in Claude Code's plugin data directory. To reset:
+**Fix:** The marker is stored in your home directory. To reset:
 ```bash
-rm -rf "${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/smart-search}/markers"
+rm -rf "$HOME/.claude-smart-search"
 ```
 
 ### MCP tool names
@@ -149,7 +149,7 @@ When installed as a plugin, MCP tool names are prefixed with the plugin ID:
 - `mcp__plugin_smart-search_brave-search__*`
 - `mcp__plugin_smart-search_tavily-search__*`
 
-The hook matcher uses these prefixed names. If you use this plugin in local dev mode (`--plugin-dir`), tool names won't have the prefix — update the `matcher` in `hooks/hooks.json` accordingly.
+The hook matcher supports both prefixed plugin-install names and unprefixed local-dev names.
 
 ---
 
