@@ -1,33 +1,47 @@
 # Smart Search
 
-A Claude Code plugin that blocks the first search tool call in a session until `/smart-search:search` has been invoked. Bundles brave-search and tavily-search MCPs with a command hook and a mandatory search workflow.
+A Claude Code plugin that bundles Brave Search and Tavily MCP servers, then reminds the agent to use a search strategy before the first search tool call in a session.
 
 ---
 
 ## Why This Plugin
 
-Claude Code has a built-in `WebSearch` tool, but it only works with Anthropic's native API. When you use third-party model providers (e.g. proxies, alternative API endpoints), the built-in `WebSearch` silently fails — it returns "no web search tool available" instead of actual search results.
+Claude Code's built-in `WebSearch` only works with Anthropic's native API. With third-party model providers, it can fail with "no web search tool available" instead of returning results.
 
-This plugin solves that by bundling `brave-search` and `tavily-search` MCP servers as replacements. These MCPs work regardless of which model provider you use, giving you reliable search capability on any setup.
-
----
-
-## When Does It Activate
-
-This plugin activates **only when a search tool is called** (brave-search or tavily-search). It does not affect normal conversations. If you ask a question that doesn't trigger a search, the plugin stays inactive.
+Smart Search bundles `brave-search` and `tavily-search` MCP servers so search remains available across model providers.
 
 ---
 
-## What It Does
+## When It Activates
 
-When you (or a subagent) try to call a search tool for the first time in a session, the command hook blocks the call and requires you to complete the search strategy first:
+The plugin activates only when a Brave or Tavily search tool is called. Normal conversations and local code work are unaffected.
 
-- **Assess task complexity** (Simple / Standard / Complex)
-- **Answer four questions** (Recency, Authority, Specificity, Sequencing)
-- **Select the right tool** (brave-search for URLs, tavily-search for content)
-- **Follow the execution flow** (match depth to complexity)
+On the first search tool call in a session:
 
-Only after the strategy is completed will search tools be allowed to execute for that session.
+1. The `PreToolUse` hook blocks that one call.
+2. The hook asks the agent to invoke `/smart-search:search` and apply the strategy.
+3. The hook automatically records a session marker.
+4. The next search tool call is allowed.
+
+There is no manual activation command to run.
+
+---
+
+## Search Strategy
+
+The bundled skill keeps search depth proportional to the task:
+
+| Level | Use For | Default Flow |
+|---|---|---|
+| Simple | One fact, real-time data, official URL lookup | One targeted search call |
+| Standard | Official docs, versions, API usage, changelog | Brave first; Tavily only if page content is needed |
+| Complex | Comparison, synthesis, conflicting claims | Brave for source discovery; Tavily for key source details |
+
+Tavily is a conditional depth upgrade, not a mandatory second step. Use it when the answer depends on page content, exact wording, conflicting claims, tables, code blocks, or source details that Brave snippets do not contain.
+
+For Chinese queries, the skill defaults to `country: "CN"` and `search_lang: "zh-hans"` when the target is China-local, Chinese-language, or not otherwise specified. For foreign official docs, global news, overseas companies, or explicit language/region targets, follow the target source instead.
+
+When presenting URLs, the skill asks the agent to display clean URLs by removing tracking or low-value query parameters such as `utm_*`, `fbclid`, `gclid`, `oid`, `vt`, `spm`, `from`, and `source`.
 
 ---
 
@@ -35,45 +49,45 @@ Only after the strategy is completed will search tools be allowed to execute for
 
 ### Step 1: Add the marketplace
 
-```
+```text
 /plugin marketplace add JiangHe12/smart-search
 ```
 
 ### Step 2: Install the plugin
 
-```
+```text
 /plugin install smart-search
 ```
 
 ### Step 3: Set API keys
 
-On first install, Claude Code will prompt you for your API keys. Configure them via:
+On first install, Claude Code will prompt you for API keys. You can also configure them with:
 
-```
+```text
 /plugin manage smart-search
 ```
 
-This plugin uses Claude Code `userConfig` for API keys. Existing shell environment variables such as `BRAVE_API_KEY` and `TAVILY_API_KEY` are not automatically imported — you must set the keys through `/plugin manage`.
+This plugin uses Claude Code `userConfig` for API keys. Existing shell environment variables such as `BRAVE_API_KEY` and `TAVILY_API_KEY` are not automatically imported.
 
 ### Step 4: Reload
 
-```
+```text
 /reload-plugins
 ```
 
 ### Step 5: Verify installation
 
-```
-/plugin list    → smart-search should be listed and enabled
-/mcp            → brave-search and tavily-search should show "Connected"
-/hooks          → PreToolUse command hook should be registered
-/skills         → smart-search:search should appear
+```text
+/plugin list    -> smart-search should be listed and enabled
+/mcp            -> brave-search and tavily-search should show "Connected"
+/hooks          -> PreToolUse and SessionStart hooks should be registered
+/skills         -> smart-search:search should appear
 ```
 
-### Get your API keys
+### Get API keys
 
-- Brave Search: https://brave.com/search/api/ (free tier: 2,000 queries/month)
-- Tavily: https://tavily.com (free tier: 1,000 queries/month)
+- Brave Search: https://brave.com/search/api/
+- Tavily: https://tavily.com
 
 ---
 
@@ -81,43 +95,41 @@ This plugin uses Claude Code `userConfig` for API keys. Existing shell environme
 
 ### Hook Mechanism
 
-The plugin uses a `command`-type `PreToolUse` hook (Node.js script) that intercepts all brave-search and tavily-search tool calls. When a search tool is invoked:
+The plugin uses command hooks:
 
-1. A `SessionStart` hook clears the strategy marker on new sessions and `/clear`
-2. The `PreToolUse` hook script checks if `/smart-search:search` has been invoked in this active context
-3. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
-4. Claude is told to invoke `/smart-search:search`, complete the checklist, and run the final activation command shown at the end of the skill
-5. After completing the strategy, the activation command enables search for the session
-6. The next search tool call is explicitly allowed through with `permissionDecision: "allow"`
+1. `SessionStart` clears the session marker on startup and `/clear`.
+2. `PreToolUse` intercepts Brave and Tavily search tool calls.
+3. If the marker exists, the search call is allowed.
+4. If the marker is missing, the first search call is denied with a strategy reminder, and the hook writes the marker automatically.
+5. The next search call in the same session is allowed.
 
-This is a hard constraint, not a soft prompt — search tools cannot execute in a new session until `/smart-search:search` has been invoked once. Resuming a session or compacting context preserves the marker to avoid repeated interruptions.
+This preserves the first-search reminder without requiring a separate activation command.
 
-### Search Strategy
+### Tool Roles
 
-The skill follows a 6-step workflow:
-
-1. **Assess Complexity** — classify as Simple, Standard, or Complex
-2. **Four Questions Checklist** — Recency, Authority, Specificity, Sequencing
-3. **Tool Selection** — pick brave-search, tavily-search, or both
-4. **Execution Flow** — follow the matching flow for your task level
-5. **Failure Handling** — switch tools or refine queries on failure
-6. **Tavily Payload Control** — start with basic depth; use advanced/raw content only when needed
+| Component | Role |
+|---|---|
+| `brave-search` MCP | Web search, official URL discovery, authoritative source discovery |
+| `tavily-search` MCP | Page content extraction, exact details, deeper multi-source analysis |
+| `search` skill | Search depth, source quality, Tavily escalation, language defaults, URL presentation |
+| `PreToolUse` hook | First-search strategy reminder and session marker handling |
 
 ---
 
 ## Troubleshooting
 
-### API Key not set
+### API key not set
 
-**Symptom:** MCP server fails to start, or search returns errors.
+**Symptom:** MCP server fails to start or search returns authentication errors.
 
-**Fix:** Run `/config` to check if keys are set. If not, follow Step 3 in Installation.
+**Fix:** Run `/plugin manage smart-search` and configure both keys.
 
 ### npx download fails
 
-**Symptom:** MCP server shows "disconnected" or timeout errors.
+**Symptom:** MCP server shows disconnected or times out.
 
 **Fix:** Check network connectivity. If behind a proxy, configure npm:
+
 ```bash
 npm config set proxy http://your-proxy:port
 npm config set https-proxy http://your-proxy:port
@@ -125,38 +137,42 @@ npm config set https-proxy http://your-proxy:port
 
 ### Hook not triggering
 
-**Symptom:** Search executes without strategy review.
+**Symptom:** Search executes without the first-search strategy reminder.
 
-**Fix:** Run `/hooks` and confirm PreToolUse command hook is listed. If not, run `/reload-plugins`.
+**Fix:** Run `/hooks` and confirm the `PreToolUse` command hook is listed. If not, run `/reload-plugins`.
 
 ### Skill not appearing
 
-**Symptom:** `smart-search:search` missing from `/skills` list.
+**Symptom:** `smart-search:search` is missing from `/skills`.
 
-**Fix:** Run `/plugin list` to confirm plugin is enabled. If not, run `/plugin install smart-search`.
+**Fix:** Run `/plugin list` to confirm the plugin is enabled. If needed, reinstall or reload plugins.
 
-### Search always blocked
+### Search is repeatedly blocked
 
-**Symptom:** Every search call is denied, even after invoking the skill.
+**Symptom:** Every search call is denied instead of only the first one.
 
-**Fix:** Make sure the final activation command at the end of `/smart-search:search` was run. Reading the skill content alone is not enough; Smart Search must be enabled for the session. The activation marker is stored in your home directory. To reset:
-```bash
-rm -rf "$HOME/.claude-smart-search"
+**Fix:** The hook may be unable to write the session marker in your home directory. Check the denial reason for the marker path and permission error. The marker is stored at:
+
+```text
+~/.claude-smart-search/ready
 ```
+
+To reset manually, delete that file or run `/clear`.
 
 ### MCP tool names
 
 When installed as a plugin, MCP tool names are prefixed with the plugin ID:
+
 - `mcp__plugin_smart-search_brave-search__*`
 - `mcp__plugin_smart-search_tavily-search__*`
 
-The hook matcher supports both prefixed plugin-install names and unprefixed local-dev names.
+The hook matcher supports both prefixed plugin-install names and unprefixed local-development names.
 
 ---
 
 ## MCP Version Policy
 
-MCP servers are intentionally not pinned by default so users receive upstream fixes and improvements automatically. If an upstream release breaks compatibility, pin the package version in `.mcp.json`:
+MCP servers are intentionally not pinned by default so users receive upstream fixes automatically. If an upstream release breaks compatibility, pin the package version in `.mcp.json`:
 
 ```json
 "args": ["-y", "@brave/brave-search-mcp-server@x.y.z", "--transport", "stdio"]
@@ -164,35 +180,26 @@ MCP servers are intentionally not pinned by default so users receive upstream fi
 
 ---
 
-## What's Included
-
-| Component | Description |
-|---|---|
-| `brave-search` MCP | Web search, find official docs and authoritative URLs |
-| `tavily-search` MCP | Content extraction, structured data, deep analysis |
-| `search` skill | Mandatory strategy workflow before the first search in a session |
-| `PreToolUse` command hook | Blocks search tools until strategy is completed |
-
----
-
 ## File Structure
 
-```
+```text
 smart-search/
 ├── .claude-plugin/
-│   ├── plugin.json              # Plugin manifest with userConfig
-│   └── marketplace.json         # Marketplace manifest
+│   ├── plugin.json
+│   └── marketplace.json
 ├── skills/
 │   └── search/
-│       └── SKILL.md             # Search strategy skill
+│       └── SKILL.md
 ├── hooks/
-│   ├── hooks.json               # PreToolUse command hook config
-│   ├── enforce-search-strategy.mjs  # Hook script (deny/allow logic)
-│   ├── reset-strategy-marker.mjs    # SessionStart marker reset
-│   └── mark-strategy-applied.mjs    # Marker script (called by skill)
-├── .mcp.json                    # MCP server configs
+│   ├── hooks.json
+│   ├── enforce-search-strategy.mjs
+│   ├── reset-strategy-marker.mjs
+│   └── mark-strategy-applied.mjs
+├── .mcp.json
 └── README.md
 ```
+
+`mark-strategy-applied.mjs` is kept as a legacy manual fallback. The normal flow now writes the marker from `enforce-search-strategy.mjs`.
 
 ---
 

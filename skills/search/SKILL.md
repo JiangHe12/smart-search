@@ -1,206 +1,111 @@
 ---
 name: search
-description: Search tool selection strategy. Must be read before calling brave-search or tavily-search to ensure correct search approach, authoritative sources, and accurate results.
+description: Search tool selection strategy. Read before calling brave-search or tavily-search to choose the right depth, source quality, language defaults, and verification path.
 license: MIT
 ---
 
 # Search Strategy
 
-Before calling any search tool, complete this thinking process.
+Before calling any search tool, decide the search depth first. Use the smallest search flow that can answer safely.
 
----
+## 1. Classify the Task
 
-## Step 1: Assess Task Complexity
+| Level | Use For | Default Flow |
+|---|---|---|
+| Simple | One fact, real-time data, one obvious source, official URL lookup | One targeted search call |
+| Standard | Official docs, versions, API usage, changelog, technical lookup | Brave first; Tavily only if page content is needed |
+| Complex | Comparison, synthesis, conflicting claims, multi-source analysis | Brave for source discovery; Tavily for key sources that support conclusions |
 
-First, categorize the task to determine the required search depth.
-
-| Level | Task Type | Examples | Required Tools |
-|-------|-----------|----------|----------------|
-| **Simple** | Single fact, real-time data, one clear source | Weather, exchange rate, release date | 1 tool, 1 call |
-| **Standard** | Official docs, version verification, technical lookup | API usage, changelog, SDK guide | `brave-search` → `tavily-search` |
-| **Complex** | Comparison, synthesis, multi-vendor analysis | "Compare X vs Y", "summarize latest AI models" | Both tools, multiple calls |
-
-Core principle:
+Core rule:
 
 ```text
-Match search depth to task complexity.
-Simple tasks do not require complex flows.
-Complex tasks must not be shortcut.
+Match depth to risk. Do not spend extra calls when snippets are enough, but do not answer from shallow snippets when the conclusion depends on page content.
 ```
 
----
+## 2. Pre-Search Checklist
 
-## Step 2: Four Questions Checklist
+Answer these quickly before searching:
 
-Answer these before calling any tool:
+| Question | Action |
+|---|---|
+| Does this require current information? | Search; do not rely on memory. |
+| Does it require official or authoritative sources? | Use Brave to find the source first. |
+| Are the terms specific enough? | Add year, version, vendor, product, or domain. |
+| Does the answer depend on page body content? | Use Tavily for the relevant source. |
+| Are sources likely to conflict? | Compare sources; use Tavily on the key claims. |
 
-| Question | If Yes | Action |
-|----------|--------|--------|
-| **Recency**: Does this need current info? (latest release, real-time data) | Do not rely on memory | Must search to confirm |
-| **Authority**: Does it require official sources? (vendor docs, GitHub, announcements) | Find official URL first | `brave-search` → then `tavily-search` |
-| **Specificity**: Are search terms specific enough? (year, version, "latest") | Refine keywords | Add "2026", version number, or domain to query |
-| **Sequencing**: Should basic facts be confirmed before deeper analysis? | Yes for complex tasks | Search facts first, then analyze |
+## 3. Tool Selection
 
----
+| Need | Tool |
+|---|---|
+| Find official docs, GitHub repos, vendor announcements, authoritative URLs | `brave-search` |
+| Get page body details, exact values, tables, code blocks, or original wording | `tavily-search` |
+| Quick answer where the title/snippet already contains the needed fact | One search tool only |
+| Comparison or synthesis | Brave for source discovery, then Tavily only for sources whose details affect the answer |
 
-## Step 3: Tool Selection
+If the chosen Brave or Tavily tool is not callable, use ToolSearch to load the missing MCP tool schema first.
 
-| Task Need | Tool | Notes |
-|-----------|------|-------|
-| Find official docs, GitHub repos, authoritative URLs | `brave-search` | Required first step for Standard/Complex tasks |
-| Extract page content, structured data, concrete values | `tavily-search` | Start with `search_depth: basic`; escalate only if needed |
-| Summarize, compare, or synthesize multiple sources | `tavily-search` | **Required — brave-search summaries are not sufficient** |
-| Need both source URL and its content | `brave-search` first → `tavily-search` | Both required |
-| Simple real-time data (weather, price, single fact) | `tavily-search` directly | Skip brave-search for Simple tasks |
+## 4. When Tavily Is Required
 
-If a required Brave or Tavily search tool is not callable, use ToolSearch to load the missing MCP tool schema first.
+Call `tavily-search` when any of these are true:
 
----
+- The answer needs page content, not just search snippets.
+- Brave results conflict on facts such as version, date, price, capability, or limitation.
+- The task compares multiple sources and the conclusion depends on details from those sources.
+- Brave found a likely URL, but the snippet does not contain enough evidence.
+- The user asks for quotes, exact wording, official source details, citations, or asks to verify carefully.
 
-## Step 4: Execution Flows
+You may skip `tavily-search` when all relevant conditions are true:
 
-### Simple Task Flow
+- The task is a single low-risk fact, source lookup, or official entry-point lookup.
+- Brave returns an official or clearly authoritative source.
+- The title/snippet contains enough information to answer safely.
+- The user appears to value speed over deep verification.
+
+Short rule:
 
 ```text
-1. Identify single data need
-2. tavily-search: targeted query → extract value
-3. Respond
+Use Tavily when the answer depends on page content. Skip Tavily when Brave's URL, title, and snippet are enough to answer safely.
 ```
 
-### Standard Task Flow
+## 5. Language and Region Defaults
 
-```text
-1. brave-search: "[topic] official docs/release 2026" → get authoritative URL
-2. tavily-search: extract content from that URL (start with search_depth: basic)
-3. Respond
-```
+- If the user query is in Chinese and the target is China-local, Chinese-language, or not otherwise specified, use `country: "CN"` and `search_lang: "zh-hans"` when the tool supports these parameters.
+- If the user asks for foreign official docs, global news, overseas companies, English source material, or another explicit region/language, follow the target source region/language instead of forcing `CN` / `zh-hans`.
+- If mixed-language sources are useful, search in the language of the likely authoritative source first.
 
-### Complex Task Flow (Comparison / Synthesis)
+## 6. Result Quality and URL Presentation
 
-```text
-1. brave-search: find authoritative sources for each entity being compared
-2. tavily-search: extract detailed content from each source
-3. Aggregate and synthesize
-4. Respond
-```
+- Prefer official sources, primary docs, GitHub repositories, standards bodies, original announcements, and reputable primary reporting.
+- Down-rank results with spammy titles, unrelated query parameters, SEO pollution, mismatched snippets, or low-authority mirrors.
+- When presenting URLs to the user, display clean URLs by removing tracking or low-value query parameters such as `utm_*`, `fbclid`, `gclid`, `oid`, `vt`, `spm`, `from`, and `source`.
+- Do not modify URLs used internally for retrieval unless the cleaned URL is known to preserve the same page.
 
-> **For Complex tasks**: Both steps 1 and 2 are required. `brave-search` results alone are not sufficient for comparison or synthesis — the summaries are too shallow.
-
----
-
-## Step 5: Failure Handling
-
-Tools fail. Here is how to adapt:
+## 7. Failure Handling
 
 | Situation | Action |
-|-----------|--------|
-| `brave-search` returns no relevant results | Switch directly to `tavily-search` with a refined query — do not repeat the same brave-search query |
-| `brave-search` fails (error / timeout) | Skip to `tavily-search` immediately — do not retry brave-search more than once |
-| `tavily-search` returns shallow content | Retry with `search_depth: advanced`; add `include_raw_content: true` only if exact page text is required |
-| Both tools return irrelevant results | Reformulate query (add year, domain, or more specific terms), then retry once per tool |
-| After 2 failed attempts per tool | Inform the user of what was found and what remains uncertain — do not fabricate |
+|---|---|
+| Brave returns no relevant results | Switch to Tavily or refine the query; do not repeat the same Brave query. |
+| Brave fails or times out | Use Tavily directly. Retry Brave at most once with a better query. |
+| Tavily returns shallow content | Retry with `search_depth: advanced`; use `include_raw_content: true` only for exact text, code, or tables. |
+| Both tools return irrelevant results | Reformulate once with year, domain, vendor, or more specific terms. |
+| Evidence remains weak | State what was found and what remains uncertain. Do not fabricate. |
 
-**Key rule**: If a tool fails or returns nothing useful, switch tools or refine the query. Do not retry the identical query on the same tool.
-
----
-
-## Step 6: tavily-search Payload Control
-
-Quick decision table:
+## 8. Tavily Payload Control
 
 | Scenario | `search_depth` | `include_raw_content` |
-|----------|----------------|-----------------------|
+|---|---|---|
 | Version features, changelogs, release notes | `basic` | `false` |
 | General API docs lookup | `basic` | `false` |
-| API docs with exact code blocks, tables, or source text | `advanced` | `true` |
-| Comparison, synthesis, multi-source analysis | `advanced` | `false` |
+| Exact code blocks, tables, or source wording | `advanced` | `true` |
+| Comparison or synthesis where snippets are insufficient | `advanced` | `false` |
 
-Default for Standard documentation, changelog, release-note, and feature-summary tasks:
+Default to `search_depth: "basic"`. Escalate only when basic results are too shallow.
 
-```json
-{
-  "search_depth": "basic"
-}
-```
+## 9. Before Responding
 
-Use advanced depth only when basic results are too shallow:
-
-```json
-{
-  "search_depth": "advanced"
-}
-```
-
-Use `include_raw_content: true` only when exact source text, code blocks, tables, or full page structure are required. Avoid raw content for general documentation lookup and feature summaries because it can return very large payloads.
-
----
-
-## Common Mistakes to Avoid
-
-| Mistake | Consequence | Correct Approach |
-|---------|-------------|------------------|
-| Answer version/release facts from memory | May be outdated | Always search to confirm |
-| Use vague keywords without year or version | Stale results | Add "2026", "latest", specific version |
-| Stop after `brave-search` on a comparison task | Incomplete analysis | Always follow with `tavily-search` |
-| Retry the same failed query on the same tool | Wasted calls | Switch tools or reformulate |
-| Apply Complex flow to Simple tasks | Wasted tokens | Match depth to task complexity |
-| Fabricate when search yields nothing | Inaccurate output | State uncertainty, report what was found |
-
----
-
-## Step Completion Checklist
-
-Before responding, verify:
-
-- [ ] Did I correctly classify the task as Simple / Standard / Complex?
-- [ ] For Standard/Complex: did I call `brave-search` to find authoritative sources?
-- [ ] For Complex tasks: did I call `tavily-search` to extract detailed content?
-- [ ] If a tool failed: did I switch tools or refine the query rather than retrying identically?
-- [ ] Did I avoid answering version/recency facts from memory?
-
-## Final Step: Enable Search for This Session
-
-After completing the checklist, you must enable Smart Search for this session before retrying the search tool.
-
-This is an internal Smart Search activation step. Reading this skill alone is not enough; the hook allows search tools only after this activation command has run.
-
-Run this exact command:
-
-```bash
-node -e "const fs=require('fs'), path=require('path'); const home=process.env.USERPROFILE||process.env.HOME||'/tmp'; const dir=path.join(home,'.claude-smart-search'); fs.mkdirSync(dir,{recursive:true}); fs.writeFileSync(path.join(dir,'ready'), new Date().toISOString());"
-```
-
----
-
-## Core Principles
-
-```text
-Match depth to complexity. Official sources before synthesis.
-On failure, switch or refine — never retry the same call.
-Uncertainty acknowledged > answer fabricated.
-```
-
----
-
-## Examples
-
-### Simple Task
-
-User: "北京今天天气怎么样"
-
-- Classification: Simple (single fact, real-time data)
-- Flow: `tavily-search` directly → return result
-
-### Standard Task
-
-User: "Next.js 15 breaking changes 官方文档总结"
-
-- Classification: Standard (official docs, technical lookup)
-- Flow: `brave-search` "Next.js 15 breaking changes official docs 2026" → get URL → `tavily-search` extract content → summarize
-
-### Complex Task
-
-User: "对比 GPT-4.1、Claude 4、Gemini 2.5 的能力和限制"
-
-- Classification: Complex (comparison, multi-source synthesis)
-- Flow: `brave-search` find authoritative sources for each model → `tavily-search` extract detailed content from each → synthesize and compare
+- Did the search depth match the task risk?
+- If Tavily was skipped, was Brave's URL/title/snippet enough to answer safely?
+- If sources conflict, did you resolve or disclose the conflict?
+- Did you avoid answering current facts from memory?
+- Did you present clean URLs and avoid relying on spammy results?

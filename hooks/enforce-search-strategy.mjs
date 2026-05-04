@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const home = process.env.USERPROFILE || process.env.HOME || "/tmp";
@@ -21,22 +21,37 @@ if (existsSync(markerFile)) {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       permissionDecision: "allow",
-      permissionDecisionReason: "Smart Search strategy has already been applied for this session.",
+      permissionDecisionReason: "Smart Search strategy reminder has already been recorded for this session.",
     },
   });
   process.stdout.write(output);
   process.exit(0);
 }
 
-mkdirSync(markerDir, { recursive: true });
-
 const toolName = input.tool_name || process.env.CLAUDE_TOOL_NAME || "unknown";
 const toolSuffix = toolName === "unknown" ? "" : ` (${toolName})`;
+
+try {
+  mkdirSync(markerDir, { recursive: true });
+  writeFileSync(markerFile, new Date().toISOString());
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const output = JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: `Smart Search could not write its session marker at ${markerFile}: ${message}`,
+    },
+  });
+  process.stdout.write(output);
+  process.exit(0);
+}
+
 const output = JSON.stringify({
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     permissionDecision: "deny",
-    permissionDecisionReason: `Smart Search session activation is missing. Before using any search tool${toolSuffix}, invoke /smart-search:search, complete its checklist, run the final activation command shown at the end of the skill, then retry the search.`,
+    permissionDecisionReason: `Smart Search strategy has not been reviewed yet. Before using any search tool${toolSuffix}, invoke /smart-search:search, apply the matching search strategy, then retry the search. This reminder is recorded for the session; the next search tool call will be allowed.`,
   },
 });
 
