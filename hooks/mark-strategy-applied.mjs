@@ -1,12 +1,9 @@
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
-const pluginData =
-  process.env.CLAUDE_PLUGIN_DATA || join(process.env.TMPDIR || "/tmp", "smart-search");
-const markerDir = join(pluginData, "markers");
+const home = process.env.HOME || process.env.USERPROFILE || "/tmp";
+const markerDir = join(home, ".claude-smart-search");
 
 mkdirSync(markerDir, { recursive: true });
 
-const markerFile = join(markerDir, "ready");
-
-writeFileSync(markerFile, new Date().toISOString());
+writeFileSync(join(markerDir, "ready"), new Date().toISOString());

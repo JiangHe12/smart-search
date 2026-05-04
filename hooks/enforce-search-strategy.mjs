@@ -1,9 +1,8 @@
 import { existsSync, mkdirSync, readFileSync } from "fs";
 import { join } from "path";
 
-const pluginData =
-  process.env.CLAUDE_PLUGIN_DATA || join(process.env.TMPDIR || "/tmp", "smart-search");
-const markerDir = join(pluginData, "markers");
+const home = process.env.HOME || process.env.USERPROFILE || "/tmp";
+const markerDir = join(home, ".claude-smart-search");
 const markerFile = join(markerDir, "ready");
 
 function readHookInput() {
