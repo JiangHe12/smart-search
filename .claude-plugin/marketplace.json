@@ -4,14 +4,14 @@
     "name": "JiangHe12"
   },
   "metadata": {
-    "description": "Claude Code plugin: search MCPs with first-use strategy reminders",
-    "version": "1.2.0"
+    "description": "Claude Code plugin: search MCPs with non-blocking first-use strategy reminders",
+    "version": "1.2.1"
   },
   "plugins": [
     {
       "name": "smart-search",
       "source": "./",
-      "description": "Bundles brave-search and tavily-search MCPs with first-use strategy reminders and conditional depth guidance. Solves WebSearch unavailability on third-party model providers.",
+      "description": "Bundles brave-search and tavily-search MCPs with non-blocking first-use strategy reminders and conditional depth guidance. Solves WebSearch unavailability on third-party model providers.",
       "category": "search",
       "tags": ["search", "mcp", "brave", "tavily", "strategy"]
     }

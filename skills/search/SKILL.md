@@ -1,6 +1,6 @@
 ---
 name: search
-description: Search tool selection strategy. Read before calling brave-search or tavily-search to choose the right depth, source quality, language defaults, and verification path.
+description: Search tool selection strategy for brave-search and tavily-search. Use it to choose the right depth, source quality, language defaults, and verification path.
 license: MIT
 ---
 

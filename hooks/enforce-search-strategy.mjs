@@ -17,14 +17,6 @@ function readHookInput() {
 const input = readHookInput();
 
 if (existsSync(markerFile)) {
-  const output = JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "allow",
-      permissionDecisionReason: "Smart Search strategy reminder has already been recorded for this session.",
-    },
-  });
-  process.stdout.write(output);
   process.exit(0);
 }
 
@@ -50,8 +42,8 @@ try {
 const output = JSON.stringify({
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
-    permissionDecision: "deny",
-    permissionDecisionReason: `Smart Search strategy has not been reviewed yet. Before using any search tool${toolSuffix}, invoke /smart-search:search, apply the matching search strategy, then retry the search. This reminder is recorded for the session; the next search tool call will be allowed.`,
+    permissionDecision: "allow",
+    permissionDecisionReason: `Smart Search strategy reminder for ${toolName === "unknown" ? "this search tool" : toolName}: apply /smart-search:search guidance while using search results. Use the smallest search depth that answers safely; escalate to Tavily only when page content is needed.`,
   },
 });
 
