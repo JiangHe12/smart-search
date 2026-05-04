@@ -47,7 +47,13 @@ Only after the strategy is completed will search tools be allowed to execute for
 
 ### Step 3: Set API keys
 
-On first install, Claude Code will prompt you for your API keys via `userConfig`. If you need to change them later, use `/config` in Claude Code.
+On first install, Claude Code will prompt you for your API keys. Configure them via:
+
+```
+/plugin manage smart-search
+```
+
+This plugin uses Claude Code `userConfig` for API keys. Existing shell environment variables such as `BRAVE_API_KEY` and `TAVILY_API_KEY` are not automatically imported — you must set the keys through `/plugin manage`.
 
 ### Step 4: Reload
 
