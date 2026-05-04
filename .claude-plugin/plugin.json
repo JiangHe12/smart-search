@@ -1,7 +1,19 @@
 {
   "name": "smart-search",
   "description": "Search with strategy enforcement. Bundles brave-search and tavily-search MCPs with a mandatory search workflow.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json"
+  "mcpServers": "./.mcp.json",
+  "userConfig": {
+    "brave_api_key": {
+      "description": "Brave Search API Key",
+      "required": true,
+      "sensitive": true
+    },
+    "tavily_api_key": {
+      "description": "Tavily API Key",
+      "required": true,
+      "sensitive": true
+    }
+  }
 }

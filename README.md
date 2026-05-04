@@ -1,6 +1,6 @@
 # Smart Search
 
-A Claude Code plugin that enforces a structured search workflow. Bundles brave-search and tavily-search MCPs with a mandatory strategy before any search execution.
+A Claude Code plugin that enforces mandatory strategy review before any search execution. Bundles brave-search and tavily-search MCPs with a command hook that blocks search tools until the strategy skill is completed.
 
 ---
 
@@ -20,12 +20,14 @@ This plugin activates **only when a search tool is called** (brave-search or tav
 
 ## What It Does
 
-When you (or a subagent) try to call a search tool, Smart Search intercepts the call and forces a strategy review first:
+When you (or a subagent) try to call a search tool, the command hook blocks the call and requires you to complete the search strategy first:
 
 - **Assess task complexity** (Simple / Standard / Complex)
 - **Answer four questions** (Recency, Authority, Specificity, Sequencing)
 - **Select the right tool** (brave-search for URLs, tavily-search for content)
 - **Follow the execution flow** (match depth to complexity)
+
+Only after the strategy is completed will the search tool be allowed to execute.
 
 ---
 
@@ -45,58 +47,32 @@ When you (or a subagent) try to call a search tool, Smart Search intercepts the 
 
 ### Step 3: Set API keys
 
-See [API Key Setup](#api-key-setup) below.
-
-### Step 4: Verify installation
-
-After reloading, run these commands to confirm everything works:
+On first install, Claude Code will prompt you for your API keys via `userConfig`. If you need to change them later:
 
 ```
-/plugin list    → smart-search should be listed and enabled
-/mcp            → brave-search and tavily-search should show "Connected"
-/hooks          → PreToolUse hook should be registered
-/skills         → smart-search:search should appear
+/config
 ```
 
-### Step 5: Reload
+Or set via CLI:
+
+```bash
+claude config set userConfig.brave_api_key your-brave-api-key
+claude config set userConfig.tavily_api_key your-tavily-api-key
+```
+
+### Step 4: Reload
 
 ```
 /reload-plugins
 ```
 
----
-
-## API Key Setup
-
-### Option A: Current session only (temporary)
-
-In Claude Code, run:
+### Step 5: Verify installation
 
 ```
-/env BRAVE_API_KEY=your-brave-api-key
-/env TAVILY_API_KEY=your-tavily-api-key
-```
-
-These keys are lost when you close the session.
-
-### Option B: Permanent (all sessions)
-
-Add to your shell profile (`~/.bashrc`, `~/.zshrc`, or Windows System Environment Variables):
-
-```bash
-export BRAVE_API_KEY="your-brave-api-key"
-export TAVILY_API_KEY="your-tavily-api-key"
-```
-
-Then restart your terminal or run `source ~/.bashrc`.
-
-### Option C: Claude Code settings (recommended)
-
-Set via Claude Code CLI — persists across sessions without touching your shell profile:
-
-```bash
-claude settings add env BRAVE_API_KEY=your-brave-api-key
-claude settings add env TAVILY_API_KEY=your-tavily-api-key
+/plugin list    → smart-search should be listed and enabled
+/mcp            → brave-search and tavily-search should show "Connected"
+/hooks          → PreToolUse command hook should be registered
+/skills         → smart-search:search should appear
 ```
 
 ### Get your API keys
@@ -110,7 +86,15 @@ claude settings add env TAVILY_API_KEY=your-tavily-api-key
 
 ### Hook Mechanism
 
-The plugin uses a `PreToolUse` hook that matches all brave-search and tavily-search tool calls. Before any search tool executes, a prompt is injected forcing the skill to activate.
+The plugin uses a `command`-type `PreToolUse` hook that intercepts all brave-search and tavily-search tool calls. When a search tool is invoked:
+
+1. The hook script checks if the search strategy has been completed in this session
+2. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
+3. Claude is told to invoke `/smart-search:search` first
+4. After completing the strategy, the skill marks it as applied
+5. The next search tool call is allowed through
+
+This is a hard constraint, not a soft prompt — the search tool physically cannot execute until the strategy is completed.
 
 ### Search Strategy
 
@@ -131,12 +115,7 @@ The skill follows a 6-step workflow:
 
 **Symptom:** MCP server fails to start, or search returns errors.
 
-**Fix:** Verify keys are set:
-```bash
-echo $BRAVE_API_KEY
-echo $TAVILY_API_KEY
-```
-If empty, follow [API Key Setup](#api-key-setup).
+**Fix:** Run `/config` to check if keys are set. If not, follow Step 3 in Installation.
 
 ### npx download fails
 
@@ -152,7 +131,7 @@ npm config set https-proxy http://your-proxy:port
 
 **Symptom:** Search executes without strategy review.
 
-**Fix:** Run `/hooks` and confirm PreToolUse hook is listed. If not, run `/reload-plugins`.
+**Fix:** Run `/hooks` and confirm PreToolUse command hook is listed. If not, run `/reload-plugins`.
 
 ### Skill not appearing
 
@@ -160,18 +139,18 @@ npm config set https-proxy http://your-proxy:port
 
 **Fix:** Run `/plugin list` to confirm plugin is enabled. If not, run `/plugin install smart-search`.
 
+### Search always blocked
+
+**Symptom:** Every search call is denied, even after invoking the skill.
+
+**Fix:** The session marker resets when Claude Code restarts. If the issue persists, manually clear the marker:
+```bash
+rm /tmp/.smart-search-strategy-applied
+```
+
 ### MCP tool names changed
 
-This plugin matches tools named `brave-search` and `tavily-search`. If your MCP servers use different names, update the `matcher` in `hooks/hooks.json` and the skill references in `SKILL.md` accordingly.
-
-### Windows environment variables
-
-If API keys are set in Windows System Environment Variables but Claude Code doesn't see them, try setting them via Claude Code settings instead:
-
-```bash
-claude settings add env BRAVE_API_KEY=your-key
-claude settings add env TAVILY_API_KEY=your-key
-```
+This plugin matches tools named `brave-search` and `tavily-search`. If your MCP servers use different names, update the `matcher` in `hooks/hooks.json` accordingly.
 
 ---
 
@@ -191,8 +170,8 @@ MCP servers are intentionally not pinned by default so users receive upstream fi
 |---|---|
 | `brave-search` MCP | Web search, find official docs and authoritative URLs |
 | `tavily-search` MCP | Content extraction, structured data, deep analysis |
-| `search-strategy` skill | Mandatory workflow before any search |
-| `PreToolUse` hook | Intercepts search tools, forces skill activation |
+| `search` skill | Mandatory strategy workflow before any search |
+| `PreToolUse` command hook | Blocks search tools until strategy is completed |
 
 ---
 
@@ -201,13 +180,15 @@ MCP servers are intentionally not pinned by default so users receive upstream fi
 ```
 smart-search/
 ├── .claude-plugin/
-│   ├── plugin.json              # Plugin manifest
+│   ├── plugin.json              # Plugin manifest with userConfig
 │   └── marketplace.json         # Marketplace manifest
 ├── skills/
 │   └── search/
 │       └── SKILL.md             # Search strategy skill
 ├── hooks/
-│   └── hooks.json               # PreToolUse hook config
+│   ├── hooks.json               # PreToolUse command hook config
+│   ├── enforce-search-strategy.sh   # Hook script (deny/allow logic)
+│   └── mark-strategy-applied.sh     # Marker script (called by skill)
 ├── .mcp.json                    # MCP server configs
 └── README.md
 ```
@@ -220,21 +201,6 @@ smart-search/
 git clone https://github.com/JiangHe12/smart-search
 claude --plugin-dir ./smart-search
 ```
-
----
-
-## Roadmap
-
-### Enforce search strategy at tool-call level
-
-Currently the hook uses `prompt` type for soft guidance. A future improvement:
-
-- Add a `command`-type `PreToolUse` hook
-- Detect search tool invocation (brave-search / tavily-search)
-- Validate whether search strategy has been applied
-- Return `permissionDecision: "deny"` or `"ask"` if not
-
-Challenge: requires tracking reasoning state or injecting markers. Needs careful design to avoid blocking legitimate queries.
 
 ---
 

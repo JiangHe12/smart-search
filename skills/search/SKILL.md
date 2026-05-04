@@ -1,5 +1,5 @@
 ---
-name: search-strategy
+name: search
 description: Search tool selection strategy. Must be read before calling brave-search or tavily-search to ensure correct search approach, authoritative sources, and accurate results.
 license: MIT
 ---
@@ -137,6 +137,12 @@ Before responding, verify:
 - [ ] For Complex tasks: did I call `tavily-search` to extract detailed content?
 - [ ] If a tool failed: did I switch tools or refine the query rather than retrying identically?
 - [ ] Did I avoid answering version/recency facts from memory?
+
+After completing the checklist, mark the strategy as applied so the search tool can proceed:
+
+```bash
+touch /tmp/.smart-search-strategy-applied
+```
 
 ---
 
