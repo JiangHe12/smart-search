@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__brave-search__.*|mcp__tavily-search__.*",
+        "matcher": "mcp__plugin_smart-search_brave-search__.*|mcp__plugin_smart-search_tavily-search__.*",
         "hooks": [
           {
             "type": "command",

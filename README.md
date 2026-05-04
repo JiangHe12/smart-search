@@ -143,9 +143,13 @@ npm config set https-proxy http://your-proxy:port
 rm -rf "${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/smart-search}/markers"
 ```
 
-### MCP tool names changed
+### MCP tool names
 
-This plugin matches tools named `brave-search` and `tavily-search`. If your MCP servers use different names, update the `matcher` in `hooks/hooks.json` accordingly.
+When installed as a plugin, MCP tool names are prefixed with the plugin ID:
+- `mcp__plugin_smart-search_brave-search__*`
+- `mcp__plugin_smart-search_tavily-search__*`
+
+The hook matcher uses these prefixed names. If you use this plugin in local dev mode (`--plugin-dir`), tool names won't have the prefix — update the `matcher` in `hooks/hooks.json` accordingly.
 
 ---
 
