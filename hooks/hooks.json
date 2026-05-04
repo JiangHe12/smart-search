@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__brave-search__.*|mcp__tavily-search__.*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You must first invoke the smart-search:search skill before using any search tool. Follow the skill's workflow to assess task complexity, answer the four questions checklist, and select the correct tool and execution flow."
+          }
+        ]
+      }
+    ]
+  }
+}
