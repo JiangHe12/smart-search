@@ -106,6 +106,15 @@ Tools fail. Here is how to adapt:
 
 ## Step 6: tavily-search Payload Control
 
+Quick decision table:
+
+| Scenario | `search_depth` | `include_raw_content` |
+|----------|----------------|-----------------------|
+| Version features, changelogs, release notes | `basic` | `false` |
+| General API docs lookup | `basic` | `false` |
+| API docs with exact code blocks, tables, or source text | `advanced` | `true` |
+| Comparison, synthesis, multi-source analysis | `advanced` | `false` |
+
 Default for Standard documentation, changelog, release-note, and feature-summary tasks:
 
 ```json
