@@ -147,3 +147,28 @@ Match depth to complexity. Official sources before synthesis.
 On failure, switch or refine — never retry the same call.
 Uncertainty acknowledged > answer fabricated.
 ```
+
+---
+
+## Examples
+
+### Simple Task
+
+User: "北京今天天气怎么样"
+
+- Classification: Simple (single fact, real-time data)
+- Flow: `tavily-search` directly → return result
+
+### Standard Task
+
+User: "Next.js 15 breaking changes 官方文档总结"
+
+- Classification: Standard (official docs, technical lookup)
+- Flow: `brave-search` "Next.js 15 breaking changes official docs 2026" → get URL → `tavily-search` extract content → summarize
+
+### Complex Task
+
+User: "对比 GPT-4.1、Claude 4、Gemini 2.5 的能力和限制"
+
+- Classification: Complex (comparison, multi-source synthesis)
+- Flow: `brave-search` find authoritative sources for each model → `tavily-search` extract detailed content from each → synthesize and compare
