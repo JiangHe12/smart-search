@@ -36,7 +36,7 @@ const output = JSON.stringify({
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     permissionDecision: "deny",
-    permissionDecisionReason: `You must invoke the /smart-search:search skill before using any search tool${toolSuffix}. Follow the skill's workflow, then retry.`,
+    permissionDecisionReason: `Before using any search tool${toolSuffix}, invoke /smart-search:search, complete its checklist, run the marker command shown at the end of the skill, then retry the search.`,
   },
 });
 
