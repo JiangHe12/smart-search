@@ -1,5 +1,15 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs'),path=require('path');const f=path.join(process.env.HOME||process.env.USERPROFILE||'/tmp','.claude-smart-search','ready');try{fs.unlinkSync(f)}catch{}\""
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "mcp__(plugin_smart-search_)?brave-search__.*|mcp__(plugin_smart-search_)?tavily-search__.*",
