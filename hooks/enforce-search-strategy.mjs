@@ -1,9 +1,13 @@
-import { existsSync, mkdirSync, readFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, appendFileSync } from "fs";
 import { join } from "path";
 
 const home = process.env.HOME || process.env.USERPROFILE || "/tmp";
 const markerDir = join(home, ".claude-smart-search");
 const markerFile = join(markerDir, "ready");
+
+// Debug log
+const debugLine = `[${new Date().toISOString()}] home=${home} markerFile=${markerFile} exists=${existsSync(markerFile)}\n`;
+try { appendFileSync(join(markerDir, "debug.log"), debugLine); } catch {}
 
 function readHookInput() {
   try {

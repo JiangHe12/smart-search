@@ -5,8 +5,8 @@
         "matcher": "mcp__plugin_smart-search_brave-search__.*|mcp__plugin_smart-search_tavily-search__.*",
         "hooks": [
           {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-search-strategy.mjs\""
+            "type": "prompt",
+            "prompt": "Before using any search tool, you should first invoke the /smart-search:search skill and follow its workflow. After completing the strategy, you may proceed with the search."
           }
         ]
       }
