@@ -4,27 +4,18 @@ import { join } from "path";
 const pluginData =
   process.env.CLAUDE_PLUGIN_DATA || join(process.env.TMPDIR || "/tmp", "smart-search");
 const markerDir = join(pluginData, "markers");
+const markerFile = join(markerDir, "ready");
 
-function getSessionKey() {
+function readHookInput() {
   try {
     const stdin = readFileSync(0, "utf-8");
-    const input = JSON.parse(stdin);
-    return input.session_id || input.transcript_path || "default";
+    return JSON.parse(stdin);
   } catch {
-    return "default";
+    return {};
   }
 }
 
-function hashKey(key) {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash * 31 + key.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash).toString(36);
-}
-
-const sessionKey = getSessionKey();
-const markerFile = join(markerDir, hashKey(sessionKey));
+const input = readHookInput();
 
 if (existsSync(markerFile)) {
   process.exit(0);
@@ -32,12 +23,13 @@ if (existsSync(markerFile)) {
 
 mkdirSync(markerDir, { recursive: true });
 
-const toolName = process.env.CLAUDE_TOOL_NAME || "unknown";
+const toolName = input.tool_name || process.env.CLAUDE_TOOL_NAME || "unknown";
+const toolSuffix = toolName === "unknown" ? "" : ` (${toolName})`;
 const output = JSON.stringify({
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     permissionDecision: "deny",
-    permissionDecisionReason: `You must invoke the /smart-search:search skill before using any search tool (${toolName}). Follow the skill's workflow, then retry.`,
+    permissionDecisionReason: `You must invoke the /smart-search:search skill before using any search tool${toolSuffix}. Follow the skill's workflow, then retry.`,
   },
 });
 

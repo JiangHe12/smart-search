@@ -1,6 +1,6 @@
 # Smart Search
 
-A Claude Code plugin that enforces mandatory strategy review before any search execution. Bundles brave-search and tavily-search MCPs with a command hook that blocks search tools until the strategy skill is completed.
+A Claude Code plugin that blocks the first search tool call in a session until `/smart-search:search` has been invoked. Bundles brave-search and tavily-search MCPs with a command hook and a mandatory search workflow.
 
 ---
 
@@ -20,14 +20,14 @@ This plugin activates **only when a search tool is called** (brave-search or tav
 
 ## What It Does
 
-When you (or a subagent) try to call a search tool, the command hook blocks the call and requires you to complete the search strategy first:
+When you (or a subagent) try to call a search tool for the first time in a session, the command hook blocks the call and requires you to complete the search strategy first:
 
 - **Assess task complexity** (Simple / Standard / Complex)
 - **Answer four questions** (Recency, Authority, Specificity, Sequencing)
 - **Select the right tool** (brave-search for URLs, tavily-search for content)
 - **Follow the execution flow** (match depth to complexity)
 
-Only after the strategy is completed will the search tool be allowed to execute.
+Only after the strategy is completed will search tools be allowed to execute for that session.
 
 ---
 
@@ -77,13 +77,13 @@ On first install, Claude Code will prompt you for your API keys via `userConfig`
 
 The plugin uses a `command`-type `PreToolUse` hook (Node.js script) that intercepts all brave-search and tavily-search tool calls. When a search tool is invoked:
 
-1. The hook script checks if the search strategy has been completed in this session
+1. The hook script checks if `/smart-search:search` has been invoked in this session
 2. If not, it returns `permissionDecision: "deny"` — the search tool is blocked
 3. Claude is told to invoke `/smart-search:search` first
 4. After completing the strategy, the skill marks it as applied
 5. The next search tool call is allowed through
 
-This is a hard constraint, not a soft prompt — the search tool physically cannot execute until the strategy is completed.
+This is a hard constraint, not a soft prompt — search tools cannot execute in a session until `/smart-search:search` has been invoked once.
 
 ### Search Strategy
 
@@ -159,7 +159,7 @@ MCP servers are intentionally not pinned by default so users receive upstream fi
 |---|---|
 | `brave-search` MCP | Web search, find official docs and authoritative URLs |
 | `tavily-search` MCP | Content extraction, structured data, deep analysis |
-| `search` skill | Mandatory strategy workflow before any search |
+| `search` skill | Mandatory strategy workflow before the first search in a session |
 | `PreToolUse` command hook | Blocks search tools until strategy is completed |
 
 ---

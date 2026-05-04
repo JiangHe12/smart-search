@@ -141,7 +141,7 @@ Before responding, verify:
 After completing the checklist, mark the strategy as applied so the search tool can proceed:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/hooks/mark-strategy-applied.mjs" "${CLAUDE_SESSION_ID:-default}"
+node "${CLAUDE_PLUGIN_ROOT}/hooks/mark-strategy-applied.mjs"
 ```
 
 ---

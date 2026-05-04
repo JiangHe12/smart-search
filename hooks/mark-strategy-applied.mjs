@@ -7,11 +7,6 @@ const markerDir = join(pluginData, "markers");
 
 mkdirSync(markerDir, { recursive: true });
 
-const sessionKey = process.argv[2] || "default";
-let hash = 0;
-for (let i = 0; i < sessionKey.length; i++) {
-  hash = (hash * 31 + sessionKey.charCodeAt(i)) | 0;
-}
-const markerFile = join(markerDir, Math.abs(hash).toString(36));
+const markerFile = join(markerDir, "ready");
 
 writeFileSync(markerFile, new Date().toISOString());

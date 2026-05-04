@@ -2,6 +2,9 @@
   "name": "smart-search",
   "description": "Search with strategy enforcement. Bundles brave-search and tavily-search MCPs with a mandatory search workflow.",
   "version": "1.0.3",
+  "author": {
+    "name": "JiangHe12"
+  },
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "userConfig": {
